@@ -1,5 +1,7 @@
 ﻿using FirstAPI.DAL;
+using FirstAPI.DTOs;
 using FirstAPI.Entities;
+using FirstAPI.Repositories.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -10,17 +12,16 @@ namespace FirstAPI.Controllers
     [ApiController]
     public class CategoriesController : ControllerBase
     {
-        private readonly AppDbContext _db;
+        private readonly IRepository _repository;
 
-        public CategoriesController(AppDbContext db)
+        public CategoriesController(IRepository repository)
         {
-            _db = db;
+            _repository = repository;
         }
         [HttpGet]
         public async Task<IActionResult> Get(int page = 1,int limit =3 )
         {
-            List<Category> categories = await _db.Categories.Skip((page-1)*limit).Take(limit).ToListAsync();
-            return Ok(categories);
+            return Ok(await _repository.GetAllAsync(x=>x.Id > 2));
         }
 
         [HttpGet("{id}")]
@@ -28,7 +29,7 @@ namespace FirstAPI.Controllers
         {
             if (id <= 0) return StatusCode(StatusCodes.Status400BadRequest);
 
-            Category existed = await _db.Categories.FirstOrDefaultAsync(c => c.Id == id);
+            Category existed = await _repository.GetByIdAsync(id);
 
             if (existed is null)
             {
@@ -39,10 +40,14 @@ namespace FirstAPI.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(Category category)
+        public async Task<IActionResult> Create([FromForm]CreateCategoryDTO categoryDTO)
         {
-            await _db.Categories.AddAsync(category);
-            await _db.SaveChangesAsync();
+            Category category = new Category
+            {
+                Name = categoryDTO.Name,
+            };
+            await _repository.AddAsync(category);
+            await _repository.SaveChangesAsync();
             return StatusCode(StatusCodes.Status201Created,category);
         }
         [HttpPut("{id}")]
@@ -50,16 +55,16 @@ namespace FirstAPI.Controllers
         {
             if (id <= 0) return StatusCode(StatusCodes.Status400BadRequest);
 
-            Category existed = await _db.Categories.FirstOrDefaultAsync(c => c.Id == id);
+            Category existed = await _repository.GetByIdAsync(id);
 
             if (existed is null)
             {
                 return StatusCode(StatusCodes.Status404NotFound);
             }
 
-            existed.Name = name;
-            await _db.SaveChangesAsync();
-
+            existed.Name = name; 
+            _repository.Update(existed);
+            await _repository.SaveChangesAsync();
             return Accepted(existed);
         }
         [HttpDelete("{id}")]
@@ -67,14 +72,14 @@ namespace FirstAPI.Controllers
         {
             if (id <= 0) return StatusCode(StatusCodes.Status400BadRequest);
 
-            Category existed = await _db.Categories.FirstOrDefaultAsync(c => c.Id == id);
+            Category existed = await _repository.GetByIdAsync(id);
 
             if (existed is null)
             {
                 return StatusCode(StatusCodes.Status404NotFound);
             }
-            _db.Categories.Remove(existed);
-            await _db.SaveChangesAsync();
+            _repository.Delete(existed);
+            await _repository.SaveChangesAsync();
             return NoContent();
         }
 

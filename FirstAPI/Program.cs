@@ -1,4 +1,6 @@
 using FirstAPI.DAL;
+using FirstAPI.Repositories.Implementations;
+using FirstAPI.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace FirstAPI
@@ -18,6 +20,7 @@ namespace FirstAPI
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+            builder.Services.AddScoped<IRepository, Repository>();
 
             var app = builder.Build();
 
