@@ -2,8 +2,9 @@
 
 namespace FirstAPI.Entities
 {
-    public class Category:BaseEntity
+    public class Tag:BaseEntity
     {
         public string Name { get; set; }
+
     }
 }
